@@ -584,6 +584,8 @@
 
 <script>
   const NUMERO_WHATSAPP = "5541988402942";
+  const CRM_URL = "https://maudmkjtzryqqytqgbki.supabase.co";
+  const CRM_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1hdWRta2p0enJ5cXF5dHFnYmtpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3MjM5NzQsImV4cCI6MjEwODI5OTk3NH0.97yrWMLZkufXjuvkmjTYCBW0_eZoGEco1GrcYLyUxi4"; // chave pública (anon): só permite enviar leads, não ler
   const SHEET_URL = "https://script.google.com/macros/s/AKfycbxThEaygh_MF8PXqQ5zaQvc_hK1iT01Qo_xcD6YlDdsPHA7_j2kOnTr4CStoeRgJR9x2Q/exec";
 
   const form = document.getElementById('formLead');
@@ -653,31 +655,32 @@
       linhas.push("Detalhes: " + detalhe);
     }
 
-    // Salva o lead na planilha (não bloqueia a abertura do WhatsApp caso falhe)
+    // Salva o lead no CRM da ARVIA (Supabase). Se falhar, usa a planilha como reserva.
+    const lead = {
+      origem: "formulario-consultoria",
+      nome: nome, whatsapp: whatsapp, email: email,
+      segmento: segmento.value, objetivo: objetivo, valor_mensal: valorDisposto,
+      qualificacao: { aluguel: aluguel.value, carro: carro.value, empreender: empreender.value, guardar: guardar.value },
+      detalhe: detalhe || null,
+      consentimento: true,
+      consentimento_em: new Date().toISOString()
+    };
+    const reservaPlanilha = () => {
+      try{
+        fetch(SHEET_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ nome, whatsapp, email, aluguel: aluguel.value, carro: carro.value, segmento: segmento.value, objetivo,
+            empreender: empreender.value, guardar: guardar.value, valorDisposto, detalhe,
+            consentimento: "Sim - Política de Privacidade de 23/10/2026", consentimentoEm: lead.consentimento_em }) });
+      }catch(err){ console.error("Falha ao salvar na planilha:", err); }
+    };
     try{
-      fetch(SHEET_URL, {
+      fetch(CRM_URL + "/rest/v1/leads", {
         method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({
-          nome: nome,
-          whatsapp: whatsapp,
-          email: email,
-          aluguel: aluguel.value,
-          carro: carro.value,
-          segmento: segmento.value,
-          objetivo: objetivo,
-          empreender: empreender.value,
-          guardar: guardar.value,
-          valorDisposto: valorDisposto,
-          detalhe: detalhe,
-          consentimento: "Sim - Política de Privacidade de 23/10/2026",
-          consentimentoEm: new Date().toISOString()
-        })
-      });
-    }catch(err){
-      console.error("Falha ao salvar na planilha:", err);
-    }
+        keepalive: true,
+        headers: { "apikey": CRM_KEY, "Authorization": "Bearer " + CRM_KEY, "Content-Type": "application/json", "Prefer": "return=minimal" },
+        body: JSON.stringify(lead)
+      }).then(r => { if(!r.ok) reservaPlanilha(); }).catch(reservaPlanilha);
+    }catch(err){ reservaPlanilha(); }
 
     const mensagem = encodeURIComponent(linhas.join("\n"));
     const url = "https://wa.me/" + NUMERO_WHATSAPP + "?text=" + mensagem;
