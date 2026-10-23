@@ -285,6 +285,11 @@
     border-color: var(--erro);
   }
   .campo.invalido .erro-msg{ display:block; }
+  .campo-consent{ margin:6px 0 18px; }
+  .consent-label{ display:flex; gap:10px; align-items:flex-start; font-size:13.5px; line-height:1.5; cursor:pointer; }
+  .consent-label input{ width:20px; height:20px; flex:none; margin-top:1px; accent-color: var(--verde); }
+  .consent-label span{ font-weight:500; }
+  .consent-label a{ color: inherit; font-weight:600; }
 
   .divisor{
     height:1px;
@@ -548,6 +553,14 @@
         </div>
       </div>
 
+      <div class="campo campo-consent" data-campo="consent">
+        <label class="consent-label" for="consent">
+          <input type="checkbox" id="consent" name="consent">
+          <span>Li e concordo com a <a href="https://luccaademiconpgua-source.github.io/calculadora-de-patrimonio/privacidade.html" target="_blank" rel="noopener">Política de Privacidade</a> e autorizo o uso dos meus dados para receber o contato e a proposta.</span>
+        </label>
+        <span class="erro-msg">Para continuar, é preciso aceitar a Política de Privacidade.</span>
+      </div>
+
       <button type="submit" class="btn-enviar">Entregue o meu plano de negócios</button>
       <p class="btn-sub">Você será direcionado(a) direto pro meu WhatsApp</p>
 
@@ -590,6 +603,7 @@
     const guardar = form.querySelector('input[name="guardar"]:checked');
     const valorDisposto = document.getElementById('valorDisposto').value;
     const detalhe = document.getElementById('detalhe').value.trim();
+    const consent = document.getElementById('consent').checked;
 
     let valido = true;
 
@@ -604,6 +618,7 @@
       { el: document.querySelector('[data-campo="empreender"]'), ok: !!empreender },
       { el: document.querySelector('[data-campo="guardar"]'), ok: !!guardar },
       { el: document.querySelector('[data-campo="valorDisposto"]'), ok: !!valorDisposto },
+      { el: document.querySelector('[data-campo="consent"]'), ok: consent },
     ];
 
     campos.forEach(c => {
@@ -652,7 +667,9 @@
           empreender: empreender.value,
           guardar: guardar.value,
           valorDisposto: valorDisposto,
-          detalhe: detalhe
+          detalhe: detalhe,
+          consentimento: "Sim - Política de Privacidade de 23/10/2026",
+          consentimentoEm: new Date().toISOString()
         })
       });
     }catch(err){
